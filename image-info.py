@@ -10,3 +10,10 @@ class ImageInfo :
         cls = self.boxes.cls.cpu().numpy()
         indices = [i for i, c in enumerate(cls) if self.allNames[c] == class_name]
         return indices
+    
+    def boxInfo(self, index):
+        xyxy = self.boxes.xyxy.cpu().numpy()[index]
+        conf = self.boxes.conf.cpu().numpy()[index]
+        cls = self.boxes.cls.cpu().numpy()[index]
+        class_name = self.allNames[cls]
+        return (*xyxy, conf, class_name)
