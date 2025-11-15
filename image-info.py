@@ -1,5 +1,6 @@
 from ultralytics import YOLO
 import pandas as pd
+import numpy as np
 class ImageInfo :
     def __init__(self, pathImage):
         self.model = YOLO('yolov8m-seg.pt')
@@ -28,3 +29,19 @@ class ImageInfo :
         df["name"] = names
         df["confidence"] = conf
         return df
+    
+    def suitcaseHandbagPerson(self, threshold):
+        xywhn = self.boxes.xywhn.cpu().numpy()
+        cls = self.boxes.cls.cpu().numpy()
+        sh_indices = [i for i, c in enumerate(cls) if self.allNames[c] in ['suitcase', 'handbag']]
+        person_indices = [i for i, c in enumerate(cls) if self.allNames[c] == 'person']
+        
+        def find_nearest_person(sh_idx):
+            sh_center = xywhn[sh_idx][:2]
+            distances = [(p_idx, np.sqrt((sh_center[0] - xywhn[p_idx][0])**2 + (sh_center[1] - xywhn[p_idx][1])**2)) for p_idx in person_indices]
+            if not distances:
+                return None
+            nearest_person_idx, min_distance = min(distances, key=lambda x: x[1])
+            return (nearest_person_idx, min_distance) if min_distance <= threshold else None
+        
+        return {sh_idx: find_nearest_person(sh_idx) for sh_idx in sh_indices}
